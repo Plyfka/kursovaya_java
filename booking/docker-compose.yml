@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: booking-postgres
+    environment:
+      POSTGRES_DB: booking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: herman
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.1
+    container_name: booking-keycloak
+    command: start-dev --http-port=808
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "808:808"
+
+  app:
+    build: .
+    container_name: booking-app
+    depends_on:
+      - postgres
+    environment:
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://postgres:5432/booking
+      DB_USERNAME: postgres
+      DB_PASSWORD: herman
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

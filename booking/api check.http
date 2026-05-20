@@ -1,0 +1,54 @@
+### Check realm discovery
+GET http://localhost:808/realms/booking-realm/.well-known/openid-configuration
+Accept: application/json
+
+### USER token
+POST http://localhost:808/realms/booking-realm/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&
+client_id=booking-client&
+username=petrenko@university.local&
+password=petrenko@university.local
+
+> {%
+    client.global.set("user_token", jsonPath(response.body, "$.access_token"));
+%}
+
+### ADMIN token
+POST http://localhost:808/realms/booking-realm/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&
+client_id=booking-client&
+username=admin@university.local&
+password=admin@university.local
+
+> {%
+    client.global.set("admin_token", jsonPath(response.body, "$.access_token"));
+%}
+
+### GET buildings as USER
+GET http://localhost:8080/api/buildings
+Authorization: Bearer {{admin_token}}
+Accept: application/json
+
+### PATCH block user as USER -> expected 403
+PATCH http://localhost:8080/api/users/2/block
+Authorization: Bearer {{user_token}}
+Accept: application/json
+
+### PATCH block user as ADMIN -> expected 200
+PATCH http://localhost:8080/api/users/2/block
+Authorization: Bearer {{admin_token}}
+Accept: application/json
+
+### DELETE classroom as ADMIN
+DELETE http://localhost:8080/api/classrooms/1
+Authorization: Bearer {{admin_token}}
+Accept: application/json
+
+### PATCH block user as Unauthorized -> expected 401
+PATCH http://localhost:8080/api/users/2/block
+Authorization: Bearer {111}
+Accept: application/json
